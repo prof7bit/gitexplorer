@@ -1,7 +1,7 @@
 *.lps
 *.res
-backup
-lib
-gitexplorer
+/backup
+/lib
+/gitexplorer
 
 /*.dbg
