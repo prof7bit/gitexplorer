@@ -1,12 +1,15 @@
-object Form1: TForm1
-  Left = 598
+object FMain: TFMain
+  Left = 562
   Height = 620
-  Top = 160
+  Top = 211
   Width = 339
-  Caption = 'Form1'
+  Caption = 'Git Explorer'
   ClientHeight = 620
   ClientWidth = 339
-  LCLVersion = '1.6.3.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  LCLVersion = '1.6.2.0'
   object ShellTreeView1: TShellTreeView
     Left = 0
     Height = 621
@@ -16,6 +19,7 @@ object Form1: TForm1
     FileSortType = fstNone
     ReadOnly = True
     TabOrder = 0
+    OnExpanded = ShellTreeView1Expanded
     OnMouseDown = ShellTreeView1MouseDown
     Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
     ObjectTypes = [otFolders]
