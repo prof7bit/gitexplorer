@@ -19,12 +19,12 @@ object FMain: TFMain
     FileSortType = fstNone
     Images = ImageList1
     ReadOnly = True
+    RightClickSelect = True
     TabOrder = 0
     OnExpanded = ShellTreeView1Expanded
     OnGetImageIndex = ShellTreeView1GetImageIndex
     OnGetSelectedIndex = ShellTreeView1GetSelectedIndex
-    OnMouseDown = ShellTreeView1MouseDown
-    Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+    Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
     ObjectTypes = [otFolders]
   end
   object ImageList1: TImageList

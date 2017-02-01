@@ -36,7 +36,6 @@ type
     procedure ShellTreeView1Expanded(Sender: TObject; Node: TTreeNode);
     procedure ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
     procedure ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode);
-    procedure ShellTreeView1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure Timer1Timer(Sender: TObject);
   private
     FQueueLock: TCriticalSection;
@@ -125,20 +124,6 @@ begin
 end;
 
 { TFMain }
-
-procedure TFMain.ShellTreeView1MouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-
-var
-  N: TTreeNode;
-
-begin
-  if Button = mbRight then begin
-    N := ShellTreeView1.GetNodeAt(X, Y);
-    if Assigned(N) then
-       N.Selected := True;
-  end;
-end;
 
 procedure TFMain.Timer1Timer(Sender: TObject);
 var
