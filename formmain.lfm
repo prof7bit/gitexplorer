@@ -25,7 +25,6 @@ object FMain: TFMain
     OnExpanded = TreeViewExpanded
     OnGetImageIndex = TreeViewGetImageIndex
     OnGetSelectedIndex = TreeViewGetSelectedIndex
-    OnMouseDown = TreeViewMouseDown
     Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
     ObjectTypes = [otFolders]
   end
@@ -133,22 +132,34 @@ object FMain: TFMain
     }
   end
   object UpdateTimer: TTimer
+    Enabled = False
     Interval = 120000
     OnTimer = UpdateTimerTimer
     left = 136
     top = 24
   end
   object NodeMenu: TPopupMenu
+    OnPopup = NodeMenuPopup
     left = 32
     top = 96
     object MenuItemPull: TMenuItem
       Caption = 'git stash &&&& git pull --rebase &&&& git stash pop'
+      OnClick = MenuItemPullClick
     end
     object MenuItemPush: TMenuItem
       Caption = 'git push'
+      OnClick = MenuItemPushClick
     end
     object MenuItemCommit: TMenuItem
       Caption = 'git commit -a'
+    end
+    object MenuItemMeld: TMenuItem
+      Caption = 'meld  .'
+      OnClick = MenuItemMeldClick
+    end
+    object MenuItemConsole: TMenuItem
+      Caption = 'Console'
+      OnClick = MenuItemConsoleClick
     end
   end
 end
