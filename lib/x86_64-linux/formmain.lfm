@@ -1,7 +1,7 @@
 object FMain: TFMain
-  Left = 577
+  Left = 799
   Height = 916
-  Top = 57
+  Top = 183
   Width = 286
   Caption = 'Git Explorer'
   ClientHeight = 916
@@ -10,24 +10,25 @@ object FMain: TFMain
   OnDestroy = FormDestroy
   OnShow = FormShow
   LCLVersion = '1.6.3.0'
-  object ShellTreeView1: TShellTreeView
+  object TreeView: TShellTreeView
     Left = 0
     Height = 917
     Top = 0
     Width = 287
     Anchors = [akTop, akLeft, akRight, akBottom]
-    FileSortType = fstNone
-    Images = ImageList1
+    FileSortType = fstAlphabet
+    Images = ImageList
+    PopupMenu = NodeMenu
     ReadOnly = True
     RightClickSelect = True
     TabOrder = 0
-    OnExpanded = ShellTreeView1Expanded
-    OnGetImageIndex = ShellTreeView1GetImageIndex
-    OnGetSelectedIndex = ShellTreeView1GetSelectedIndex
+    OnExpanded = TreeViewExpanded
+    OnGetImageIndex = TreeViewGetImageIndex
+    OnGetSelectedIndex = TreeViewGetSelectedIndex
     Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
     ObjectTypes = [otFolders]
   end
-  object ImageList1: TImageList
+  object ImageList: TImageList
     left = 32
     top = 24
     Bitmap = {
@@ -130,10 +131,14 @@ object FMain: TFMain
       7E57000080060000000000000000
     }
   end
-  object Timer1: TTimer
+  object UpdateTimer: TTimer
     Interval = 120000
-    OnTimer = Timer1Timer
+    OnTimer = UpdateTimerTimer
     left = 136
     top = 24
+  end
+  object NodeMenu: TPopupMenu
+    left = 32
+    top = 96
   end
 end

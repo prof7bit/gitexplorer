@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
-  ComCtrls, ExtCtrls, process, gqueue, syncobjs;
+  ComCtrls, ExtCtrls, Menus, process, gqueue, syncobjs;
 
 const
   ICON_NORMAL   = 0;
@@ -27,16 +27,17 @@ type
   { TFMain }
 
   TFMain = class(TForm)
-    ImageList1: TImageList;
-    ShellTreeView1: TShellTreeView;
-    Timer1: TTimer;
+    ImageList: TImageList;
+    NodeMenu: TPopupMenu;
+    TreeView: TShellTreeView;
+    UpdateTimer: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure ShellTreeView1Expanded(Sender: TObject; Node: TTreeNode);
-    procedure ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
-    procedure ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode);
-    procedure Timer1Timer(Sender: TObject);
+    procedure TreeViewExpanded(Sender: TObject; Node: TTreeNode);
+    procedure TreeViewGetImageIndex(Sender: TObject; Node: TTreeNode);
+    procedure TreeViewGetSelectedIndex(Sender: TObject; Node: TTreeNode);
+    procedure UpdateTimerTimer(Sender: TObject);
   private
     FQueueLock: TCriticalSection;
     FUpdateQueue: TNodeQueue;
@@ -125,11 +126,11 @@ end;
 
 { TFMain }
 
-procedure TFMain.Timer1Timer(Sender: TObject);
+procedure TFMain.UpdateTimerTimer(Sender: TObject);
 var
   N: TShellTreeNode;
 begin
-  N := TShellTreeNode(ShellTreeView1.TopItem);
+  N := TShellTreeNode(TreeView.TopItem);
   while Assigned(N) do begin
     QueryStatus(N, True);
     N := TShellTreeNode(N.GetNext);
@@ -203,14 +204,14 @@ end;
 
 procedure TFMain.FormShow(Sender: TObject);
 begin
-  UpdateAllNodes(ShellTreeView1.TopItem);
+  UpdateAllNodes(TreeView.TopItem);
 end;
 
 procedure TFMain.FormCreate(Sender: TObject);
 begin
   FQueueLock := syncobjs.TCriticalSection.Create;
   FUpdateQueue := TNodeQueue.Create;
-  ShellTreeView1.Root := GetUserDir;
+  TreeView.Root := GetUserDir;
   FUpdateThread := TUpdateThread.Create(False);
 end;
 
@@ -222,12 +223,12 @@ begin
   FQueueLock.Free;
 end;
 
-procedure TFMain.ShellTreeView1Expanded(Sender: TObject; Node: TTreeNode);
+procedure TFMain.TreeViewExpanded(Sender: TObject; Node: TTreeNode);
 begin
   UpdateAllNodes(Node);
 end;
 
-procedure TFMain.ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
+procedure TFMain.TreeViewGetImageIndex(Sender: TObject; Node: TTreeNode);
 var
   PI: PtrInt;
 begin
@@ -237,7 +238,7 @@ begin
   end;
 end;
 
-procedure TFMain.ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode);
+procedure TFMain.TreeViewGetSelectedIndex(Sender: TObject; Node: TTreeNode);
 var
   PI: PtrInt;
 begin
