@@ -135,7 +135,7 @@ begin
       if Pos('behind', O) > 0 then
         Behind := True;
       if Pos('ahead', O) > 0 then
-        Behind := True;
+        Ahead := True;
       if Pos('clean', O) > 0 then
         Clean := True;
       if Behind then
