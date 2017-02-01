@@ -42,10 +42,10 @@ type
     FQueueLock: TCriticalSection;
     FUpdateQueue: TNodeQueue;
     FUpdateThread: TUpdateThread;
-    FGitExe: String;
     procedure QueryStatus(N: TShellTreeNode; QueueUpdate: Boolean);
     procedure AsyncQueryStatus(P: PtrInt);
     procedure UpdateAllNodes(Root: TTreeNode);
+    function GitExe: String;
     { private declarations }
   public
     { public declarations }
@@ -80,6 +80,7 @@ begin
   P.CurrentDirectory := Path;
   P.Options := [poUsePipes, poNoConsole];
   P.Executable := cmd;
+  P.Environment.Add('LANG=C');
   for A in args do
     P.Parameters.Add(A);
   P.Execute;
@@ -112,7 +113,7 @@ begin
       FMain.FUpdateQueue.Pop();
       FMain.FQueueLock.Release;
       Print('updating: ' + Node.ShortFilename);
-      if RunTool(Node.FullFilename, Fmain.FGitExe, ['remote', 'update'], O) then begin
+      if RunTool(Node.FullFilename, Fmain.GitExe, ['remote', 'update'], O) then begin
         Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
       end;
     end
@@ -158,7 +159,7 @@ var
 begin
   Path := N.FullFilename;
   if DirectoryExists(Path + DirectorySeparator + '.git') then begin
-    if RunTool(Path, FGitExe, ['status'], O) then begin
+    if RunTool(Path, GitExe, ['status'], O) then begin
       N.Text := N.ShortFilename;
       if Pos('behind', O) > 0 then
         Behind := True;
@@ -204,6 +205,15 @@ begin
   end;
 end;
 
+function TFMain.GitExe: String;
+begin
+  {$ifdef windows}
+  Result :=  'c:\Program Files (x86)\Git\bin\git.exe';
+  {$else}
+  Result :=  'git';
+  {$endif}
+end;
+
 procedure TFMain.FormShow(Sender: TObject);
 begin
   UpdateAllNodes(ShellTreeView1.TopItem);
@@ -213,7 +223,6 @@ procedure TFMain.FormCreate(Sender: TObject);
 begin
   FQueueLock := syncobjs.TCriticalSection.Create;
   FUpdateQueue := TNodeQueue.Create;
-  FGitExe := 'c:\Program Files (x86)\Git\bin\git.exe';
   ShellTreeView1.Root := GetUserDir;
   FUpdateThread := TUpdateThread.Create(False);
 end;

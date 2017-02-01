@@ -9,7 +9,7 @@ object FMain: TFMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '1.6.3.0'
   object ShellTreeView1: TShellTreeView
     Left = 0
     Height = 917
