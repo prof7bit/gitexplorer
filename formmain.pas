@@ -8,6 +8,12 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
   ComCtrls, process, gqueue, syncobjs;
 
+const
+  ICON_NORMAL   = 0;
+  ICON_CHANGED  = 1;
+  ICON_CONFLICT = 2;
+
+
 type
   TNodeQueue = specialize TQueue<TShellTreeNode>;
 
@@ -20,11 +26,14 @@ type
   { TFMain }
 
   TFMain = class(TForm)
+    ImageList1: TImageList;
     ShellTreeView1: TShellTreeView;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure ShellTreeView1Expanded(Sender: TObject; Node: TTreeNode);
+    procedure ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
+    procedure ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode);
     procedure ShellTreeView1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
     FQueueLock: TCriticalSection;
@@ -145,7 +154,13 @@ begin
       if not Clean then
         N.Text := '[DIRTY] ' + N.Text;
     end;
-    N.Text := '# ' + N.Text;
+    if Clean and not (Behind or Ahead) then begin
+      N.Data := Pointer(ICON_NORMAL + 1);
+    end
+    else begin
+      N.Data := Pointer(ICON_CHANGED + 1);
+    end;
+
     if QueueUpdate then begin
       FQueueLock.Acquire;
       FUpdateQueue.Push(N);
@@ -193,6 +208,26 @@ end;
 procedure TFMain.ShellTreeView1Expanded(Sender: TObject; Node: TTreeNode);
 begin
   UpdateAllNodes(Node);
+end;
+
+procedure TFMain.ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
+var
+  PI: PtrInt;
+begin
+  PI := PtrInt(Node.Data);
+  if PI > 0 then begin
+    Node.ImageIndex := PI - 1;
+  end;
+end;
+
+procedure TFMain.ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode);
+var
+  PI: PtrInt;
+begin
+  PI := PtrInt(Node.Data);
+  if PI > 0 then begin
+    Node.SelectedIndex := PI - 1;
+  end;
 end;
 
 end.
