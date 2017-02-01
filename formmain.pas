@@ -85,15 +85,14 @@ begin
   for A in args do
     P.Parameters.Add(A);
   P.Execute;
+  ConsoleOutput := '';
   repeat
     Sleep(1);
     while P.Output.NumBytesAvailable > 0 do
       ConsoleOutput += Chr(P.Output.ReadByte);
     if ThreadID = MainThreadID then
       Application.ProcessMessages;
-    if Now > EndTime then
-      P.Terminate(1);
-    if AppTerminating then
+    if (Now > EndTime) or AppTerminating then
       P.Terminate(1);
   until not (P.Running or (P.Output.NumBytesAvailable > 0));
   Result := (P.ExitCode = 0);
@@ -247,7 +246,7 @@ procedure TFMain.ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
 var
   PI: PtrInt;
 begin
-  PI := PtrInt(Node.Data);
+  PI := {%H-}PtrInt(Node.Data);
   if PI > 0 then begin
     Node.ImageIndex := PI - 1;
   end;
@@ -257,7 +256,7 @@ procedure TFMain.ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode
 var
   PI: PtrInt;
 begin
-  PI := PtrInt(Node.Data);
+  PI := {%H-}PtrInt(Node.Data);
   if PI > 0 then begin
     Node.SelectedIndex := PI - 1;
   end;
