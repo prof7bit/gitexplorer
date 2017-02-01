@@ -28,6 +28,9 @@ type
 
   TFMain = class(TForm)
     ImageList: TImageList;
+    MenuItemPull: TMenuItem;
+    MenuItemCommit: TMenuItem;
+    MenuItemPush: TMenuItem;
     NodeMenu: TPopupMenu;
     TreeView: TShellTreeView;
     UpdateTimer: TTimer;
@@ -37,6 +40,7 @@ type
     procedure TreeViewExpanded(Sender: TObject; Node: TTreeNode);
     procedure TreeViewGetImageIndex(Sender: TObject; Node: TTreeNode);
     procedure TreeViewGetSelectedIndex(Sender: TObject; Node: TTreeNode);
+    procedure TreeViewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure UpdateTimerTimer(Sender: TObject);
   private
     FQueueLock: TCriticalSection;
@@ -246,6 +250,12 @@ begin
   if PI > 0 then begin
     Node.SelectedIndex := PI - 1;
   end;
+end;
+
+procedure TFMain.TreeViewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  //if Button = mbRight then
+  //  NodeMenu.PopUp;
 end;
 
 end.
