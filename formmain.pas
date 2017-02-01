@@ -53,6 +53,7 @@ type
 
 var
   FMain: TFMain;
+  AppTerminating: Boolean;
 
 implementation
 {$ifdef windows}
@@ -92,6 +93,8 @@ begin
       Application.ProcessMessages;
     if Now > EndTime then
       P.Terminate(1);
+    if AppTerminating then
+      P.Terminate(1);
   until not (P.Running or (P.Output.NumBytesAvailable > 0));
   Result := (P.ExitCode = 0);
   P.Free;
@@ -119,7 +122,7 @@ begin
     end
     else
       Sleep(1);
-  until Terminated;
+  until AppTerminating;
 end;
 
 { TFMain }
@@ -229,6 +232,8 @@ end;
 
 procedure TFMain.FormDestroy(Sender: TObject);
 begin
+  AppTerminating := True;
+  FUpdateThread.WaitFor;
   FUpdateQueue.Free;
   FQueueLock.Free;
 end;
