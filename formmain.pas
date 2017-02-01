@@ -6,13 +6,14 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
-  ComCtrls, process, gqueue, syncobjs;
+  ComCtrls, ExtCtrls, process, gqueue, syncobjs;
 
 const
   ICON_NORMAL   = 0;
   ICON_CHANGED  = 1;
   ICON_CONFLICT = 2;
 
+  MILLISEC      = 1 / (24 * 60 * 60 * 1000);
 
 type
   TNodeQueue = specialize TQueue<TShellTreeNode>;
@@ -28,6 +29,7 @@ type
   TFMain = class(TForm)
     ImageList1: TImageList;
     ShellTreeView1: TShellTreeView;
+    Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -35,6 +37,7 @@ type
     procedure ShellTreeView1GetImageIndex(Sender: TObject; Node: TTreeNode);
     procedure ShellTreeView1GetSelectedIndex(Sender: TObject; Node: TTreeNode);
     procedure ShellTreeView1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure Timer1Timer(Sender: TObject);
   private
     FQueueLock: TCriticalSection;
     FUpdateQueue: TNodeQueue;
@@ -70,7 +73,9 @@ function RunTool(Path: String; cmd: String; args: array of string; out ConsoleOu
 var
   P: TProcess;
   A: String;
+  EndTime: TDateTime;
 begin
+  EndTime := Now + 5000 * MILLISEC;
   P := TProcess.Create(nil);
   P.CurrentDirectory := Path;
   P.Options := [poUsePipes, poNoConsole];
@@ -84,6 +89,8 @@ begin
       ConsoleOutput += Chr(P.Output.ReadByte);
     if ThreadID = MainThreadID then
       Application.ProcessMessages;
+    if Now > EndTime then
+      P.Terminate(1);
   until not (P.Running or (P.Output.NumBytesAvailable > 0));
   Result := (P.ExitCode = 0);
   P.Free;
@@ -104,6 +111,7 @@ begin
       Node := FMain.FUpdateQueue.Front();
       FMain.FUpdateQueue.Pop();
       FMain.FQueueLock.Release;
+      Print('updating: ' + Node.ShortFilename);
       if RunTool(Node.FullFilename, Fmain.FGitExe, ['remote', 'update'], O) then begin
         Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
       end;
@@ -126,6 +134,17 @@ begin
     N := ShellTreeView1.GetNodeAt(X, Y);
     if Assigned(N) then
        N.Selected := True;
+  end;
+end;
+
+procedure TFMain.Timer1Timer(Sender: TObject);
+var
+  N: TShellTreeNode;
+begin
+  N := TShellTreeNode(ShellTreeView1.TopItem);
+  while Assigned(N) do begin
+    QueryStatus(N, True);
+    N := TShellTreeNode(N.GetNext);
   end;
 end;
 

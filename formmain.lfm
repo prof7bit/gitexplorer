@@ -1,20 +1,20 @@
 object FMain: TFMain
-  Left = 562
-  Height = 620
-  Top = 211
-  Width = 339
+  Left = 577
+  Height = 916
+  Top = 57
+  Width = 286
   Caption = 'Git Explorer'
-  ClientHeight = 620
-  ClientWidth = 339
+  ClientHeight = 916
+  ClientWidth = 286
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
   LCLVersion = '1.6.2.0'
   object ShellTreeView1: TShellTreeView
     Left = 0
-    Height = 621
+    Height = 917
     Top = 0
-    Width = 340
+    Width = 287
     Anchors = [akTop, akLeft, akRight, akBottom]
     FileSortType = fstNone
     Images = ImageList1
@@ -129,5 +129,11 @@ object FMain: TFMain
       755C0002775C00067C5C00057B5C0001765C0001755C0001765C00037C600000
       7E57000080060000000000000000
     }
+  end
+  object Timer1: TTimer
+    Interval = 120000
+    OnTimer = Timer1Timer
+    left = 136
+    top = 24
   end
 end
