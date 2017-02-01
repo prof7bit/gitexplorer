@@ -1,0 +1,23 @@
+object Form1: TForm1
+  Left = 392
+  Height = 496
+  Top = 178
+  Width = 618
+  Caption = 'Form1'
+  ClientHeight = 496
+  ClientWidth = 618
+  LCLVersion = '1.6.3.0'
+  object ShellTreeView1: TShellTreeView
+    Left = 0
+    Height = 497
+    Top = 0
+    Width = 619
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    FileSortType = fstNone
+    ReadOnly = True
+    TabOrder = 0
+    OnMouseDown = ShellTreeView1MouseDown
+    Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+    ObjectTypes = [otFolders]
+  end
+end
