@@ -344,7 +344,7 @@ end;
 procedure TFMain.MenuItemConsoleClick(Sender: TObject);
 begin
   {$ifdef linux}
-  StartExe(TreeView.Path, 'x-terminal-emulator', [], False);
+  StartExe(TreeView.Path, 'x-terminal-emulator', [], False, True);
   {$endif}
   {$ifdef windows}
   StartExe(TreeView.Path, 'sh.exe', ['--login', '-i'], True, True);
@@ -359,7 +359,11 @@ end;
 
 procedure TFMain.MenuItemGitkClick(Sender: TObject);
 begin
+  {$ifdef windows}
   StartExe(TreeView.Path, 'sh', [GetExe('gitk')], True, False);
+  {$else}
+  StartExe(TreeView.Path, 'gitk', [], True, False);
+  {$endif}
   QueueForUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
