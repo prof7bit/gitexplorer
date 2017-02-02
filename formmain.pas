@@ -75,6 +75,7 @@ uses
   Windows;
 {$endif}
 
+
 procedure Print(Txt: String);
 begin
   {$ifdef windows}
@@ -141,10 +142,12 @@ begin
     P.Options := P.Options + [poNoConsole];
   P.Executable := cmd;
   for I := 0 to GetEnvironmentVariableCount -1 do begin
-    if Pos('LANG=', GetEnvironmentString(I)) = 0 then
-      P.Environment.Append(GetEnvironmentString(I));
+    if Pos('LANG=', GetEnvironmentString(I)) = 1 then continue;
+    if Pos('GIT_TERMINAL_PROMPT=', GetEnvironmentString(I)) = 1 then continue;
+    P.Environment.Append(GetEnvironmentString(I));
   end;
   P.Environment.Append('LANG=C');
+  P.Environment.Append('GIT_TERMINAL_PROMPT=0');
   for A in args do begin
     P.Parameters.Add(A);
   end;
