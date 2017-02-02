@@ -169,8 +169,6 @@ end;
 procedure StartExe(Path: String; Cmd: String; Args: array of string; Wait: Boolean; Console: Boolean);
 var
   P: TProcess;
-  I: Integer;
-  A: String;
 begin
   P := PrepareProcess(Path, Cmd, Args);
   if Wait then
@@ -184,8 +182,6 @@ end;
 function RunTool(Path: String; cmd: String; Args: array of string; out ConsoleOutput: String): Boolean;
 var
   P: TProcess;
-  A: String;
-  I: Integer;
 begin
   P := PrepareProcess(Path, Cmd, Args);
   P.Options := P.Options + [poUsePipes, poNoConsole];
@@ -281,7 +277,7 @@ var
 
   procedure ApplyIcon(IconIdex: Integer);
   begin
-    N.Data := Pointer(IconIdex + 1);
+    N.Data := {%H-}Pointer(IconIdex + 1);
   end;
 
 begin
