@@ -127,53 +127,68 @@ begin
   {$endif}
 end;
 
-procedure StartExe(Path: String; Cmd: String; args: array of string; Wait: Boolean; Console: Boolean);
+procedure EnvironmentInit(P: TProcess);
+var
+  I: Integer;
+begin
+  for I := 0 to GetEnvironmentVariableCount -1 do begin
+    P.Environment.Append(GetEnvironmentString(I));
+  end;
+end;
+
+procedure EnvironmentUpdate(P: TProcess; Key, Value: String);
+var
+  I: Integer;
+begin
+  Key += '=';
+  for I := 0 to P.Environment.Count - 1 do begin
+    if Pos(Key, P.Environment[I]) = 1 then begin
+      P.Environment[I] := Key + Value;
+      Exit;
+    end;
+  end;
+  P.Environment.Append(Key + Value);
+end;
+
+function PrepareProcess(Path, Cmd: String; Args: array of String): TProcess;
+var
+  A: String;
+begin
+  Result := TProcess.Create(nil);
+  Result.CurrentDirectory := Path;
+  Result.Options := [poNewProcessGroup];
+  Result.Executable := cmd;
+  EnvironmentInit(Result);
+  EnvironmentUpdate(Result, 'LANG', 'C');
+  EnvironmentUpdate(Result, 'GIT_TERMINAL_PROMPT', '0');
+  for A in args do begin
+    Result.Parameters.Add(A);
+  end;
+end;
+
+procedure StartExe(Path: String; Cmd: String; Args: array of string; Wait: Boolean; Console: Boolean);
 var
   P: TProcess;
   I: Integer;
   A: String;
 begin
-  P := TProcess.Create(nil);
-  P.CurrentDirectory := Path;
-  P.Options := [poNewProcessGroup];
+  P := PrepareProcess(Path, Cmd, Args);
   if Wait then
     P.Options := P.Options + [poWaitOnExit];
   if not Console then
     P.Options := P.Options + [poNoConsole];
-  P.Executable := cmd;
-  for I := 0 to GetEnvironmentVariableCount -1 do begin
-    if Pos('LANG=', GetEnvironmentString(I)) = 1 then continue;
-    if Pos('GIT_TERMINAL_PROMPT=', GetEnvironmentString(I)) = 1 then continue;
-    P.Environment.Append(GetEnvironmentString(I));
-  end;
-  P.Environment.Append('LANG=C');
-  P.Environment.Append('GIT_TERMINAL_PROMPT=0');
-  for A in args do begin
-    P.Parameters.Add(A);
-  end;
   P.Execute;
   P.Free;
 end;
 
-function RunTool(Path: String; cmd: String; args: array of string; out ConsoleOutput: String): Boolean;
+function RunTool(Path: String; cmd: String; Args: array of string; out ConsoleOutput: String): Boolean;
 var
   P: TProcess;
   A: String;
   I: Integer;
 begin
-  P := TProcess.Create(nil);
-  P.CurrentDirectory := Path;
-  P.Options := [poUsePipes, poNoConsole];
-  P.Executable := cmd;
-  for I := 0 to GetEnvironmentVariableCount -1 do begin
-    if Pos('LANG=', GetEnvironmentString(I)) = 0 then
-      P.Environment.Append(GetEnvironmentString(I));
-  end;
-  P.Environment.Append('LANG=C');
-  for A in args do begin
-    P.Parameters.Add(A);
-  end;
-
+  P := PrepareProcess(Path, Cmd, Args);
+  P.Options := P.Options + [poUsePipes, poNoConsole];
   P.Execute;
   ConsoleOutput := '';
   repeat
