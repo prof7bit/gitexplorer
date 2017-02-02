@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
-  ComCtrls, ExtCtrls, Menus, process, gqueue, syncobjs;
+  ComCtrls, ExtCtrls, Menus, process, gqueue, syncobjs, LazUTF8;
 
 const
   ICON_NORMAL   = 0;
@@ -84,16 +84,49 @@ begin
   {$endif}
 end;
 
-function GitExe: String;
-begin
+function GetExe(Name: String): String;
+
   {$ifdef windows}
-  Result :=  'c:\Program Files (x86)\Git\bin\git.exe';
+  function TryProgPaths(Path: String): String;
+  begin
+    Result := GetEnvironmentVariableUTF8('ProgramW6432') + Path;
+    if FileExists(Result) then exit;
+    Result := GetEnvironmentVariableUTF8('programfiles') + Path;
+    if FileExists(Result) then exit;
+    Result := GetEnvironmentVariableUTF8('programfilesx86') + Path;
+    if FileExists(Result) then exit;
+  end;
+  {$endif}
+
+  begin
+  {$ifdef windows}
+  if Name = 'git' then
+    Result := TryProgPaths('\Git\bin\git.exe');
+  if Name = 'gitk' then
+    Result := TryProgPaths('\Git\bin\gitk');
+  if Name = 'meld' then
+    Result := TryProgPaths('\Meld\Meld.exe');
   {$else}
-  Result :=  'git';
+  Result :=  Name;
   {$endif}
 end;
 
-procedure StartExe(Path: String; Cmd: String; args: array of string; Wait: Boolean);
+procedure AddToolsToPath;
+{$ifdef windows}
+var
+  GitPath, MeldPath, PathVariable: String;
+{$endif}
+begin
+  {$ifdef windows}
+  GitPath := ExtractFileDir(GetExe('git'));
+  MeldPath := ExtractFileDir(GetExe('meld'));
+  PathVariable := GetEnvironmentVariableUTF8('PATH');
+  PathVariable := GitPath + ';' + MeldPath + ';' + PathVariable;
+  SetEnvironmentVariable('PATH', PChar(PathVariable));
+  {$endif}
+end;
+
+procedure StartExe(Path: String; Cmd: String; args: array of string; Wait: Boolean; Console: Boolean);
 var
   P: TProcess;
   I: Integer;
@@ -101,7 +134,11 @@ var
 begin
   P := TProcess.Create(nil);
   P.CurrentDirectory := Path;
-  P.Options := [poUsePipes, poNoConsole, poNewProcessGroup, poWaitOnExit];
+  P.Options := [poNewProcessGroup];
+  if Wait then
+    P.Options := P.Options + [poWaitOnExit];
+  if not Console then
+    P.Options := P.Options + [poNoConsole];
   P.Executable := cmd;
   for I := 0 to GetEnvironmentVariableCount -1 do begin
     if Pos('LANG=', GetEnvironmentString(I)) = 0 then
@@ -156,7 +193,7 @@ var
   Path: String;
 begin
   Path := Node.FullFilename;
-  Result := RunTool(Path, GitExe, Args, CmdOut);
+  Result := RunTool(Path, 'git', Args, CmdOut);
 end;
 
 {$R *.lfm}
@@ -175,7 +212,7 @@ begin
       FMain.FUpdateQueue.Pop();
       FMain.FQueueLock.Release;
       Print('updating: ' + Node.ShortFilename);
-      if RunTool(Node.FullFilename, GitExe, ['remote', 'update'], O) then begin
+      if RunTool(Node.FullFilename, 'git', ['remote', 'update'], O) then begin
         Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
       end;
     end
@@ -305,30 +342,30 @@ begin
 end;
 
 procedure TFMain.MenuItemConsoleClick(Sender: TObject);
-var
-  Exe: String;
 begin
   {$ifdef linux}
-  Exe := 'x-terminal-emulator';
+  StartExe(TreeView.Path, 'x-terminal-emulator', [], False);
   {$endif}
-  StartExe(TreeView.Path, Exe, [], False);
+  {$ifdef windows}
+  StartExe(TreeView.Path, 'sh.exe', ['--login', '-i'], True, True);
+  {$endif}
 end;
 
 procedure TFMain.MenuItemGitGuiClick(Sender: TObject);
 begin
-  StartExe(TreeView.Path, GitExe, ['gui'], True);
+  StartExe(TreeView.Path, 'git', ['gui'], True, False);
   QueueForUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemGitkClick(Sender: TObject);
 begin
-  StartExe(TreeView.Path, 'gitk', ['.'], True);
+  StartExe(TreeView.Path, 'sh', [GetExe('gitk')], True, False);
   QueueForUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemMeldClick(Sender: TObject);
 begin
-  StartExe(TreeView.Path, 'meld', ['.'], True);
+  StartExe(TreeView.Path, 'meld', [TreeView.Path], True, False);
   QueueForUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
@@ -337,10 +374,16 @@ var
   OK: Boolean = False;
   O: String = '';
 begin
-  if RunGit(SelNode, ['stash'], O) then
+  if NodeIsDirty then begin
+    if RunGit(SelNode, ['stash'], O) then
+      if RunGit(SelNode, ['pull', '--rebase'], O) then
+        if RunGit(SelNode, ['stash', 'pop'], O) then
+          OK := True;
+  end
+  else begin
     if RunGit(SelNode, ['pull', '--rebase'], O) then
-      if RunGit(SelNode, ['stash', 'pop'], O) then
-        OK := True;
+      OK := True;
+  end;
   if not OK then
     MessageDlg('Error', O, mtError, [mbOK], 0);
   QueueForUpdate(TShellTreeNode(TreeView.Selected));
@@ -370,6 +413,7 @@ end;
 
 procedure TFMain.FormCreate(Sender: TObject);
 begin
+  AddToolsToPath;
   FQueueLock := syncobjs.TCriticalSection.Create;
   FUpdateQueue := TNodeQueue.Create;
   TreeView.Root := GetUserDir;
