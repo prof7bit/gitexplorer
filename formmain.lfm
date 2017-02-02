@@ -1,7 +1,7 @@
 object FMain: TFMain
   Left = 799
   Height = 916
-  Top = 183
+  Top = 94
   Width = 286
   Caption = 'Git Explorer'
   ClientHeight = 916
@@ -22,10 +22,11 @@ object FMain: TFMain
     ReadOnly = True
     RightClickSelect = True
     TabOrder = 0
+    ToolTips = False
     OnExpanded = TreeViewExpanded
     OnGetImageIndex = TreeViewGetImageIndex
     OnGetSelectedIndex = TreeViewGetSelectedIndex
-    Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+    Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRightClickSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoThemedDraw]
     ObjectTypes = [otFolders]
   end
   object ImageList: TImageList

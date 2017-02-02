@@ -56,7 +56,11 @@ type
     procedure QueryStatus(N: TShellTreeNode; RemoteUpdate: Boolean);
     procedure AsyncQueryStatus(P: PtrInt);
     procedure UpdateAllNodes(Root: TTreeNode);
-    function GitExe: String;
+    function NodeHasTag(TagName: String): Boolean;
+    function NodeIsDirty: Boolean;
+    function NodeIsConflict: Boolean;
+    function NodeIsGit: Boolean;
+    function SelNode: TShellTreeNode;
   end;
 
 var
@@ -75,6 +79,15 @@ begin
   OutputDebugString(PChar(Txt));
   {$else}
   Writeln(Txt);
+  {$endif}
+end;
+
+function GitExe: String;
+begin
+  {$ifdef windows}
+  Result :=  'c:\Program Files (x86)\Git\bin\git.exe';
+  {$else}
+  Result :=  'git';
   {$endif}
 end;
 
@@ -118,6 +131,7 @@ begin
   for A in args do begin
     P.Parameters.Add(A);
   end;
+
   P.Execute;
   ConsoleOutput := '';
   repeat
@@ -133,7 +147,14 @@ begin
     ConsoleOutput += Chr(P.Stderr.ReadByte);
   Result := (P.ExitCode = 0);
   P.Free;
-  Print(ConsoleOutput);
+end;
+
+function RunGit(Node: TShellTreeNode; Args: array of String; out CmdOut: String): Boolean;
+var
+  Path: String;
+begin
+  Path := Node.FullFilename;
+  Result := RunTool(Path, GitExe, Args, CmdOut);
 end;
 
 {$R *.lfm}
@@ -152,7 +173,7 @@ begin
       FMain.FUpdateQueue.Pop();
       FMain.FQueueLock.Release;
       Print('updating: ' + Node.ShortFilename);
-      if RunTool(Node.FullFilename, Fmain.GitExe, ['remote', 'update'], O) then begin
+      if RunTool(Node.FullFilename, GitExe, ['remote', 'update'], O) then begin
         Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
       end;
     end
@@ -190,29 +211,45 @@ var
   Dirty: Boolean = False;
   Conflict: Boolean = False;
   Diverged: Boolean = False;
+
+  procedure ApplyTag(Name: String);
+  begin
+    N.Text := '[' + Name + '] ' + N.Text;
+  end;
+
+  function HasWord(w: String): Boolean;
+  begin
+    Result := Pos(W, O) > 0;
+  end;
+
+  procedure ApplyIcon(IconIdex: Integer);
+  begin
+    N.Data := Pointer(IconIdex + 1);
+  end;
+
 begin
   Path := N.FullFilename;
   if DirectoryExists(Path + DirectorySeparator + '.git') then begin
-    if RunTool(Path, GitExe, ['status'], O) then begin
+    if RunGit(N, ['status'], O) then begin
       N.Text := N.ShortFilename;
-      if Pos('Unmerged', O) > 0 then  Conflict := True;
-      if Pos('behind', O) > 0 then    Behind := True;
-      if Pos('ahead', O) > 0 then     Ahead := True;
-      if Pos('diverged', O) > 0 then  Diverged := True;
-      if Pos('Changes', O) > 0 then   Dirty := True;
-      if Behind then    N.Text := '[BEHIND] ' + N.Text;
-      if Ahead then     N.Text := '[AHEAD] ' + N.Text;
-      if Diverged then  N.Text := '[DIVERGED] ' + N.Text;
-      if Dirty then     N.Text := '[DIRTY] ' + N.Text;
-      if Conflict then  N.Text := '[CONFLICT] ' + N.Text;
+      Conflict := HasWord('Unmerged');
+      Behind   := HasWord('behind');
+      Ahead    := HasWord('ahead');
+      Diverged := HasWord('diverged');
+      Dirty    := HasWord('Changes');
+      if Behind then    ApplyTag('BEHIND');
+      if Ahead then     ApplyTag('AHEAD');
+      if Diverged then  ApplyTag('DIVERGED');
+      if Dirty then     ApplyTag('DIRTY');
+      if Conflict then  ApplyTag('CONFLICT');
     end;
 
     if Conflict then
-      N.Data := Pointer(ICON_CONFLICT + 1)
+      ApplyIcon(ICON_CONFLICT)
     else if Dirty or Behind or Ahead or Diverged then
-      N.Data := Pointer(ICON_CHANGED + 1)
+      ApplyIcon(ICON_CHANGED)
     else
-      N.Data := Pointer(ICON_NORMAL + 1);
+      ApplyIcon(ICON_NORMAL);
 
     if RemoteUpdate then
       QueueForUpdate(N);
@@ -235,13 +272,29 @@ begin
   end;
 end;
 
-function TFMain.GitExe: String;
+function TFMain.NodeHasTag(TagName: String): Boolean;
 begin
-  {$ifdef windows}
-  Result :=  'c:\Program Files (x86)\Git\bin\git.exe';
-  {$else}
-  Result :=  'git';
-  {$endif}
+  Result := Pos('[' + TagName + ']', TreeView.Selected.Text) > 0;
+end;
+
+function TFMain.NodeIsDirty: Boolean;
+begin
+  Result := NodeHasTag('DIRTY');
+end;
+
+function TFMain.NodeIsConflict: Boolean;
+begin
+  Result := NodeHasTag('CONFLICT');
+end;
+
+function TFMain.NodeIsGit: Boolean;
+begin
+  Result := TreeView.Selected.Data <> nil;
+end;
+
+function TFMain.SelNode: TShellTreeNode;
+begin
+  Result := TShellTreeNode(TreeView.Selected);
 end;
 
 procedure TFMain.FormShow(Sender: TObject);
@@ -270,9 +323,9 @@ var
   OK: Boolean = False;
   O: String = '';
 begin
-  if RunTool(TreeView.Path, GitExe, ['stash'], O) then
-    if RunTool(TreeView.Path, GitExe, ['pull', '--rebase'], O) then
-      if RunTool(TreeView.Path, GitExe, ['stash', 'pop'], O) then
+  if RunGit(SelNode, ['stash'], O) then
+    if RunGit(SelNode, ['pull', '--rebase'], O) then
+      if RunGit(SelNode, ['stash', 'pop'], O) then
         OK := True;
   if not OK then
     MessageDlg('Error', O, mtError, [mbOK], 0);
@@ -283,7 +336,7 @@ procedure TFMain.MenuItemPushClick(Sender: TObject);
 var
   O: String = '';
 begin
-  if not RunTool(TreeView.Path, GitExe, ['push'], O) then
+  if not RunGit(SelNode, ['push'], O) then
     MessageDlg('Error', O, mtError, [mbOK], 0);
   QueueForUpdate(TShellTreeNode(TreeView.Selected));
 end;
@@ -293,8 +346,8 @@ var
   Conflict: Boolean;
   Git: Boolean;
 begin
-  Git := TreeView.Selected.Data <> nil;
-  Conflict := (Pos('[CONFLICT]', TreeView.Selected.Text) > 0);
+  Conflict := NodeIsConflict;
+  Git := NodeIsGit;
   MenuItemPull.Enabled := Git and not Conflict;
   MenuItemPush.Enabled := Git and not Conflict;
   MenuItemCommit.Enabled := Git and not Conflict;
