@@ -144,22 +144,23 @@ object FMain: TFMain
     left = 32
     top = 96
     object MenuItemPull: TMenuItem
-      Caption = 'git stash &&&& git pull --rebase &&&& git stash pop'
+      Caption = 'pull (git stash &&&& git pull --rebase &&&& git stash pop)'
       OnClick = MenuItemPullClick
     end
-    object MenuItemPush: TMenuItem
-      Caption = 'git push'
-      OnClick = MenuItemPushClick
-    end
-    object MenuItemCommit: TMenuItem
-      Caption = 'git commit -a'
-    end
     object MenuItemMeld: TMenuItem
-      Caption = 'meld  .'
+      Caption = 'merge (meld)'
       OnClick = MenuItemMeldClick
     end
+    object MenuItemGitk: TMenuItem
+      Caption = 'log (gitk)'
+      OnClick = MenuItemGitkClick
+    end
+    object MenuItemGitGui: TMenuItem
+      Caption = 'commit or push (git gui)'
+      OnClick = MenuItemGitGuiClick
+    end
     object MenuItemConsole: TMenuItem
-      Caption = 'Console'
+      Caption = 'open terminal window'
       OnClick = MenuItemConsoleClick
     end
   end

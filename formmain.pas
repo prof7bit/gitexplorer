@@ -28,11 +28,11 @@ type
 
   TFMain = class(TForm)
     ImageList: TImageList;
+    MenuItemGitGui: TMenuItem;
+    MenuItemGitk: TMenuItem;
     MenuItemConsole: TMenuItem;
     MenuItemMeld: TMenuItem;
     MenuItemPull: TMenuItem;
-    MenuItemCommit: TMenuItem;
-    MenuItemPush: TMenuItem;
     NodeMenu: TPopupMenu;
     TreeView: TShellTreeView;
     UpdateTimer: TTimer;
@@ -40,6 +40,8 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure MenuItemConsoleClick(Sender: TObject);
+    procedure MenuItemGitGuiClick(Sender: TObject);
+    procedure MenuItemGitkClick(Sender: TObject);
     procedure MenuItemMeldClick(Sender: TObject);
     procedure MenuItemPullClick(Sender: TObject);
     procedure MenuItemPushClick(Sender: TObject);
@@ -312,6 +314,18 @@ begin
   StartExe(TreeView.Path, Exe, [], False);
 end;
 
+procedure TFMain.MenuItemGitGuiClick(Sender: TObject);
+begin
+  StartExe(TreeView.Path, GitExe, ['gui'], True);
+  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+end;
+
+procedure TFMain.MenuItemGitkClick(Sender: TObject);
+begin
+  StartExe(TreeView.Path, 'gitk', ['.'], True);
+  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+end;
+
 procedure TFMain.MenuItemMeldClick(Sender: TObject);
 begin
   StartExe(TreeView.Path, 'meld', ['.'], True);
@@ -349,8 +363,8 @@ begin
   Conflict := NodeIsConflict;
   Git := NodeIsGit;
   MenuItemPull.Enabled := Git and not Conflict;
-  MenuItemPush.Enabled := Git and not Conflict;
-  MenuItemCommit.Enabled := Git and not Conflict;
+  MenuItemGitk.Enabled := Git;
+  MenuItemGitGui.Enabled := Git;
   MenuItemMeld.Enabled := Git;
 end;
 
