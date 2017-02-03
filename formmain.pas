@@ -222,21 +222,24 @@ var
 begin
   repeat
     if FMain.FUpdateQueue.Size() > 0 then begin
-      FMain.FQueueLock.Acquire;
-      Node := FMain.FUpdateQueue.Front();
-      FMain.FUpdateQueue.Pop();
-      FMain.FQueueLock.Release;
-      Print('updating: ' + Node.ShortFilename);
-      if RunTool(Node.FullFilename, 'git', ['remote', 'update'], O) then begin
-        Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
+      Print('update queue processing, halting update timer');
+      FMain.UpdateTimer.Enabled := True;
+
+      while FMain.FUpdateQueue.Size() > 0 do begin
+        FMain.FQueueLock.Acquire;
+        Node := FMain.FUpdateQueue.Front();
+        FMain.FUpdateQueue.Pop();
+        FMain.FQueueLock.Release;
+        Print('updating: ' + Node.ShortFilename);
+        if RunTool(Node.FullFilename, 'git', ['remote', 'update'], O) then begin
+          Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
+        end;
       end;
-      if FMain.FUpdateQueue.Size() = 0 then begin
-        Print('queue empty, startimg new timer');
-        FMain.UpdateTimer.Enabled := True;
-      end;
-    end
-    else
-      Sleep(1);
+
+      Print('queue empty, resuming update timer');
+      FMain.UpdateTimer.Enabled := True;
+    end;
+    Sleep(1);
   until AppTerminating;
 end;
 
@@ -246,7 +249,6 @@ procedure TFMain.UpdateTimerTimer(Sender: TObject);
 var
   N: TShellTreeNode;
 begin
-  UpdateTimer.Enabled := False;
   N := TShellTreeNode(TreeView.TopItem);
   while Assigned(N) do begin
     QueryStatus(N, True);
