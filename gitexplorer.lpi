@@ -27,12 +27,15 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="1">
+    <RequiredPackages Count="2">
       <Item1>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SynEdit"/>
       </Item1>
+      <Item2>
+        <PackageName Value="LCL"/>
+      </Item2>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="gitexplorer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -45,6 +48,13 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="FormMain"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="formprogrun.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FProgRun"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="FormProgRun"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

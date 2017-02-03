@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
-  ComCtrls, ExtCtrls, Menus, process, gqueue, syncobjs, LazUTF8;
+  ComCtrls, ExtCtrls, Menus, process, gqueue, syncobjs, LazUTF8, FormProgRun;
 
 const
   ICON_NORMAL   = 0;
@@ -128,50 +128,11 @@ begin
   {$endif}
 end;
 
-procedure EnvironmentInit(P: TProcess);
-var
-  I: Integer;
-begin
-  for I := 0 to GetEnvironmentVariableCount -1 do begin
-    P.Environment.Append(GetEnvironmentString(I));
-  end;
-end;
-
-procedure EnvironmentUpdate(P: TProcess; Key, Value: String);
-var
-  I: Integer;
-begin
-  Key += '='{%H-};
-  for I := 0 to P.Environment.Count - 1 do begin
-    if Pos(Key, P.Environment[I]) = 1 then begin
-      P.Environment[I] := Key + Value;
-      Exit;
-    end;
-  end;
-  P.Environment.Append(Key + Value);
-end;
-
-function PrepareProcess(Path, Cmd: String; Args: array of String): TProcess;
-var
-  A: String;
-begin
-  Result := TProcess.Create(nil);
-  Result.CurrentDirectory := Path;
-  Result.Options := [poNewProcessGroup];
-  Result.Executable := cmd;
-  EnvironmentInit(Result);
-  EnvironmentUpdate(Result, 'LANG', 'C');
-  EnvironmentUpdate(Result, 'GIT_TERMINAL_PROMPT', '0');
-  for A in args do begin
-    Result.Parameters.Add(A);
-  end;
-end;
-
 procedure StartExe(Path: String; Cmd: String; Args: array of string; Wait: Boolean; Console: Boolean);
 var
   P: TProcess;
 begin
-  P := PrepareProcess(Path, Cmd, Args);
+  P := TProcess2.Create(nil, Path, Cmd, Args);
   if Wait then
     P.Options := P.Options + [poWaitOnExit];
   if not Console then
@@ -184,7 +145,7 @@ function RunTool(Path: String; cmd: String; Args: array of string; out ConsoleOu
 var
   P: TProcess;
 begin
-  P := PrepareProcess(Path, Cmd, Args);
+  P := TProcess2.Create(nil, Path, Cmd, Args);
   P.Options := P.Options + [poUsePipes, poNoConsole];
   P.Execute;
   ConsoleOutput := '';
