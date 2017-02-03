@@ -55,6 +55,7 @@ type
     FUpdateQueue: TNodeQueue;
     FUpdateThread: TUpdateThread;
     procedure QueueForUpdate(Node: TShellTreeNode);
+    procedure QueueForImmediateUpdate(Node: TShellTreeNode);
     procedure QueryStatus(N: TShellTreeNode; RemoteUpdate: Boolean);
     procedure AsyncQueryStatus(P: PtrInt);
     procedure UpdateAllNodes(Root: TTreeNode);
@@ -229,6 +230,10 @@ begin
       if RunTool(Node.FullFilename, 'git', ['remote', 'update'], O) then begin
         Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
       end;
+      if FMain.FUpdateQueue.Size() = 0 then begin
+        Print('queue empty, startimg new timer');
+        FMain.UpdateTimer.Enabled := True;
+      end;
     end
     else
       Sleep(1);
@@ -241,6 +246,7 @@ procedure TFMain.UpdateTimerTimer(Sender: TObject);
 var
   N: TShellTreeNode;
 begin
+  UpdateTimer.Enabled := False;
   N := TShellTreeNode(TreeView.TopItem);
   while Assigned(N) do begin
     QueryStatus(N, True);
@@ -252,6 +258,21 @@ procedure TFMain.QueueForUpdate(Node: TShellTreeNode);
 begin
   FQueueLock.Acquire;
   FUpdateQueue.Push(Node);
+  FQueueLock.Release;
+end;
+
+procedure TFMain.QueueForImmediateUpdate(Node: TShellTreeNode);
+var
+  S: Integer;
+  I: Integer;
+begin
+  FQueueLock.Acquire;
+  S := FUpdateQueue.Size();
+  FUpdateQueue.Push(Node);
+  for I := 0 to S-1 do begin
+    FUpdateQueue.Push(FUpdateQueue.Front());
+    FUpdateQueue.Pop();
+  end;
   FQueueLock.Release;
 end;
 
@@ -371,7 +392,7 @@ end;
 procedure TFMain.MenuItemGitGuiClick(Sender: TObject);
 begin
   StartExe(TreeView.Path, 'git', ['gui'], True, False);
-  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+  QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemGitkClick(Sender: TObject);
@@ -381,13 +402,13 @@ begin
   {$else}
   StartExe(TreeView.Path, 'gitk', [], True, False);
   {$endif}
-  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+  QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemMeldClick(Sender: TObject);
 begin
   StartExe(TreeView.Path, 'meld', [TreeView.Path], True, False);
-  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+  QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemPullClick(Sender: TObject);
@@ -407,7 +428,7 @@ begin
   end;
   if not OK then
     MessageDlg('Error', O, mtError, [mbOK], 0);
-  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+  QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemPushClick(Sender: TObject);
@@ -416,7 +437,7 @@ var
 begin
   if not RunGit(SelNode, ['push'], O) then
     MessageDlg('Error', O, mtError, [mbOK], 0);
-  QueueForUpdate(TShellTreeNode(TreeView.Selected));
+  QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.NodeMenuPopup(Sender: TObject);

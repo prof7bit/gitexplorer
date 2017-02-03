@@ -134,7 +134,7 @@ object FMain: TFMain
   end
   object UpdateTimer: TTimer
     Enabled = False
-    Interval = 120000
+    Interval = 600000
     OnTimer = UpdateTimerTimer
     left = 136
     top = 24
