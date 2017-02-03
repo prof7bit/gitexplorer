@@ -140,7 +140,7 @@ procedure EnvironmentUpdate(P: TProcess; Key, Value: String);
 var
   I: Integer;
 begin
-  Key += '=';
+  Key += '='{%H-};
   for I := 0 to P.Environment.Count - 1 do begin
     if Pos(Key, P.Environment[I]) = 1 then begin
       P.Environment[I] := Key + Value;
@@ -283,6 +283,7 @@ var
 begin
   Path := N.FullFilename;
   if DirectoryExists(Path + DirectorySeparator + '.git') then begin
+    TreeView.BeginUpdate;
     if RunGit(N, ['status'], O) then begin
       N.Text := N.ShortFilename;
       Conflict := HasWord('Unmerged');
@@ -306,6 +307,8 @@ begin
 
     if RemoteUpdate then
       QueueForUpdate(N);
+
+    TreeView.EndUpdate;
   end;
 end;
 
