@@ -293,6 +293,7 @@ begin
       QueueForUpdate(N);
 
     TreeView.EndUpdate;
+    TreeView.Refresh;
   end;
 end;
 
