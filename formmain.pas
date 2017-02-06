@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
-  ComCtrls, ExtCtrls, Menus, process, gqueue, syncobjs, LazUTF8, FormProgRun;
+  ComCtrls, ExtCtrls, Menus, process, LazUTF8, FormProgRun,
+  LockedQueue;
 
 const
   ICON_NORMAL   = 0;
@@ -16,7 +17,7 @@ const
   MILLISEC      = 1 / (24 * 60 * 60 * 1000);
 
 type
-  TNodeQueue = specialize TQueue<TShellTreeNode>;
+  TUpdaterQueue = specialize TLockedQueue<TShellTreeNode>;
 
   { TUpdateThread }
 
@@ -51,8 +52,7 @@ type
     procedure TreeViewGetSelectedIndex(Sender: TObject; Node: TTreeNode);
     procedure UpdateTimerTimer(Sender: TObject);
   private
-    FQueueLock: TCriticalSection;
-    FUpdateQueue: TNodeQueue;
+    FUpdaterInbox: TUpdaterQueue;
     FUpdateThread: TUpdateThread;
     procedure QueueForUpdate(Node: TShellTreeNode);
     procedure QueueForImmediateUpdate(Node: TShellTreeNode);
@@ -182,20 +182,16 @@ var
   O: String;
 begin
   repeat
-    if FMain.FUpdateQueue.Size() > 0 then begin
+    if FMain.FUpdaterInbox.Get(Node, 100) then begin
       Print('update queue processing, halting update timer');
       FMain.UpdateTimer.Enabled := True;
 
-      while FMain.FUpdateQueue.Size() > 0 do begin
-        FMain.FQueueLock.Acquire;
-        Node := FMain.FUpdateQueue.Front();
-        FMain.FUpdateQueue.Pop();
-        FMain.FQueueLock.Release;
+      repeat
         Print('updating: ' + Node.ShortFilename);
         if RunTool(Node.FullFilename, 'git', ['remote', 'update'], O) then begin
           Application.QueueAsyncCall(@FMain.AsyncQueryStatus, PtrInt(Node));
         end;
-      end;
+      until not FMain.FUpdaterInbox.Get(Node, 100);
 
       Print('queue empty, resuming update timer');
       FMain.UpdateTimer.Enabled := True;
@@ -219,24 +215,12 @@ end;
 
 procedure TFMain.QueueForUpdate(Node: TShellTreeNode);
 begin
-  FQueueLock.Acquire;
-  FUpdateQueue.Push(Node);
-  FQueueLock.Release;
+  FUpdaterInbox.Put(Node);
 end;
 
 procedure TFMain.QueueForImmediateUpdate(Node: TShellTreeNode);
-var
-  S: Integer;
-  I: Integer;
 begin
-  FQueueLock.Acquire;
-  S := FUpdateQueue.Size();
-  FUpdateQueue.Push(Node);
-  for I := 0 to S-1 do begin
-    FUpdateQueue.Push(FUpdateQueue.Front());
-    FUpdateQueue.Pop();
-  end;
-  FQueueLock.Release;
+  FUpdaterInbox.PutFront(Node);
 end;
 
 procedure TFMain.QueryStatus(N: TShellTreeNode; RemoteUpdate: Boolean);
@@ -420,8 +404,7 @@ end;
 procedure TFMain.FormCreate(Sender: TObject);
 begin
   AddToolsToPath;
-  FQueueLock := syncobjs.TCriticalSection.Create;
-  FUpdateQueue := TNodeQueue.Create;
+  FUpdaterInbox := TUpdaterQueue.Create;
   TreeView.Root := GetUserDir;
   FUpdateThread := TUpdateThread.Create(False);
 end;
@@ -430,8 +413,7 @@ procedure TFMain.FormDestroy(Sender: TObject);
 begin
   AppTerminating := True;
   FUpdateThread.WaitFor;
-  FUpdateQueue.Free;
-  FQueueLock.Free;
+  FUpdaterInbox.Free;
 end;
 
 procedure TFMain.TreeViewExpanded(Sender: TObject; Node: TTreeNode);

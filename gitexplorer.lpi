@@ -35,7 +35,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="gitexplorer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -55,6 +55,10 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="FormProgRun"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="LockedQueue.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
