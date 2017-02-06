@@ -51,11 +51,11 @@ type
     procedure TreeViewGetImageIndex(Sender: TObject; Node: TTreeNode);
     procedure TreeViewGetSelectedIndex(Sender: TObject; Node: TTreeNode);
     procedure UpdateTimerTimer(Sender: TObject);
+    procedure QueueForUpdate(Node: TShellTreeNode);
+    procedure QueueForImmediateUpdate(Node: TShellTreeNode);
   private
     FUpdaterInbox: TUpdaterQueue;
     FUpdateThread: TUpdateThread;
-    procedure QueueForUpdate(Node: TShellTreeNode);
-    procedure QueueForImmediateUpdate(Node: TShellTreeNode);
     procedure QueryStatus(N: TShellTreeNode; RemoteUpdate: Boolean);
     procedure AsyncQueryStatus(P: PtrInt);
     procedure UpdateAllNodes(Root: TTreeNode);
@@ -363,7 +363,9 @@ procedure TFMain.MenuItemPullClick(Sender: TObject);
 var
   OK: Boolean = False;
   O: String = '';
+  N: TShellTreeNode;
 begin
+  N := TShellTreeNode(TreeView.Selected);
   (*
   if NodeIsDirty then begin
     if RunGit(SelNode, ['stash'], O) then
@@ -378,8 +380,7 @@ begin
   if not OK then
     MessageDlg('Error', O, mtError, [mbOK], 0);
   *)
-
-  QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
+  FProgRun.Run(N, 'git', ['pull', '--rebase']);
 end;
 
 procedure TFMain.MenuItemPushClick(Sender: TObject);

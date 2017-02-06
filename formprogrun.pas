@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, Forms, Controls, Graphics, Dialogs,
-  SynEditKeyCmds, process, ShellCtrls, ExtCtrls, LockedQueue;
+  SynEditKeyCmds, process, ShellCtrls, ExtCtrls, LockedQueue, Pipes;
 
 type
   TStringQueue = specialize TLockedQueue<String>;
@@ -14,7 +14,10 @@ type
   { TRunThread }
 
   TRunThread = class(TThread)
+    ReadingOutputActive: Boolean;
+    Node: TShellTreeNode;
     procedure Execute; override;
+    procedure Print(Txt: String);
   end;
 
   { TProcess2 }
@@ -28,10 +31,9 @@ type
 
   TFProgRun = class(TForm)
     SynEdit1: TSynEdit;
-    Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure Timer1Timer(Sender: TObject);
+    procedure AsyncOnOutputQueue;
   private
     FProc: TProcess2;
     FOutputQueue: TStringQueue;
@@ -59,25 +61,46 @@ var
   P: TProcess;
   Line: String;
   ErrLine: String;
+
+  Procedure ReadAndPrintLines(var L: String; S: TInputPipeStream);
+  var
+    B: Char;
+  begin
+    while S.NumBytesAvailable > 0 do begin
+      B := Char(S.ReadByte);
+      if B = #10 then begin
+        Print(TrimRight(L));
+        L := '';
+      end
+      else begin
+        L += B;
+      end;
+    end;
+  end;
+
 begin
   P := FProgRun.FProc;
   Line := '';
   ErrLine := '';
+
   repeat
-    while P.Output.NumBytesAvailable > 0 do begin
-      Line += Chr(P.Output.ReadByte);
-      if RightStr(Line, Length(LineEnding)) = LineEnding then begin
-        FProgRun.FOutputQueue.Put(Trim(Line));
-      end;
-    end;
-    while P.Stderr.NumBytesAvailable > 0 do begin
-      ErrLine += Chr(P.Stderr.ReadByte);
-      if RightStr(ErrLine, Length(LineEnding)) = LineEnding then begin
-        FProgRun.FOutputQueue.Put(Trim(ErrLine));
+    if ReadingOutputActive then begin
+      ReadAndPrintLines(Line, P.Output);
+      ReadAndPrintLines(ErrLine, P.Stderr);
+      if (not P.Running) and (P.Output.NumBytesAvailable + P.Stderr.NumBytesAvailable = 0) then begin
+        Print('----');
+        ReadingOutputActive := False;
+        FMain.QueueForImmediateUpdate(Node);
       end;
     end;
     Sleep(1);
   until Terminated;
+end;
+
+procedure TRunThread.Print(Txt: String);
+begin
+  FProgRun.FOutputQueue.Put(Txt);
+  Queue(@FProgRun.AsyncOnOutputQueue);
 end;
 
 { TProcess2 }
@@ -127,14 +150,13 @@ end;
 
 procedure TFProgRun.FormDestroy(Sender: TObject);
 begin
-  Timer1.Enabled := False;
   FRunThread.Terminate;
   FRunThread.WaitFor;
   FRunThread.Free;
   FOutputQueue.Free;
 end;
 
-procedure TFProgRun.Timer1Timer(Sender: TObject);
+procedure TFProgRun.AsyncOnOutputQueue;
 var
   Line: String;
 begin
@@ -155,14 +177,19 @@ procedure TFProgRun.Run(Node: TShellTreeNode; Cmd: String; Args: array of string
 var
   A: String;
 begin
+  if FRunThread.ReadingOutputActive then
+    exit;
   if not Showing then
     Show;
+  FProc.CurrentDirectory := Node.FullFilename;
   FProc.Executable := Cmd;
   FProc.Parameters.Clear;
   for A in Args do begin
     FProc.Parameters.Append(A);
   end;
+  FRunThread.Node := Node;
   FProc.Execute;
+  FRunThread.ReadingOutputActive := True;
 end;
 
 end.

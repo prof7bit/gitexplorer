@@ -508,10 +508,4 @@ object FProgRun: TFProgRun
       end
     end
   end
-  object Timer1: TTimer
-    Interval = 100
-    OnTimer = Timer1Timer
-    left = 35
-    top = 36
-  end
 end
