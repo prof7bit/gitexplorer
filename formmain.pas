@@ -364,6 +364,7 @@ var
   OK: Boolean = False;
   O: String = '';
 begin
+  (*
   if NodeIsDirty then begin
     if RunGit(SelNode, ['stash'], O) then
       if RunGit(SelNode, ['pull', '--rebase'], O) then
@@ -376,6 +377,8 @@ begin
   end;
   if not OK then
     MessageDlg('Error', O, mtError, [mbOK], 0);
+  *)
+
   QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 

@@ -52,6 +52,7 @@
         <Filename Value="formprogrun.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FProgRun"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="FormProgRun"/>
       </Unit2>
@@ -72,9 +73,6 @@
     </SearchPaths>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
-      <Optimizations>
-        <OptimizationLevel Value="3"/>
-      </Optimizations>
     </CodeGeneration>
     <Linking>
       <Debugging>
