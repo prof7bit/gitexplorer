@@ -33,7 +33,7 @@ type
     SynEdit1: TSynEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure AsyncOnOutputQueue;
+    procedure HookOnOutputAvailable;
   private
     FProc: TProcess2;
     FOutputQueue: TStringQueue;
@@ -100,7 +100,6 @@ end;
 procedure TRunThread.Print(Txt: String);
 begin
   FProgRun.FOutputQueue.Put(Txt);
-  Queue(@FProgRun.AsyncOnOutputQueue);
 end;
 
 { TProcess2 }
@@ -145,6 +144,7 @@ begin
   FProc := TProcess2.Create(self, '', '', []);
   FProc.Options := FProc.Options + [poUsePipes, poNoConsole];
   FOutputQueue := TStringQueue.Create;
+  FOutputQueue.OnDataAvailable := @HookOnOutputAvailable;
   FRunThread := TRunThread.Create(False);
 end;
 
@@ -156,7 +156,7 @@ begin
   FOutputQueue.Free;
 end;
 
-procedure TFProgRun.AsyncOnOutputQueue;
+procedure TFProgRun.HookOnOutputAvailable;
 var
   Line: String;
 begin

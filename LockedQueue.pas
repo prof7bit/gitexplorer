@@ -8,6 +8,7 @@ uses
   Classes, SysUtils, gdeque, syncobjs;
 
 type
+  TQueueEventProc = procedure of object;
 
   { TLockedQueue }
 
@@ -16,6 +17,7 @@ type
       TData = specialize TDeque<T>;
       PT = ^T;
     public
+      OnDataAvailable: TQueueEventProc;
       constructor Create;
       destructor Destroy; override;
       function Get(out Element: T; Timeout: Cardinal): Boolean;
@@ -30,6 +32,8 @@ type
       FData: TData;
       FLock: TCriticalSection;
       FEvent: TEvent;
+      procedure CallOnDataSync;
+      procedure CallOnDataAsync;
   end;
 
 
@@ -76,7 +80,10 @@ procedure TLockedQueue.Put(Element: T);
 begin
   Lock;
   FData.PushBack(Element);
-  FEvent.SetEvent;
+  if FData.Size() = 1 then begin
+    FEvent.SetEvent;
+    CallOnDataSync;
+  end;
   Unlock;
 end;
 
@@ -84,7 +91,10 @@ procedure TLockedQueue.PutFront(Element: T);
 begin
   Lock;
   FData.PushFront(Element);
-  FEvent.SetEvent;
+  if FData.Size() = 1 then begin
+    FEvent.SetEvent;
+    CallOnDataSync;
+  end;
   Unlock;
 end;
 
@@ -110,6 +120,18 @@ end;
 function TLockedQueue.WaitFor(Timeout: Cardinal): TWaitResult;
 begin
   Result := FEvent.WaitFor(Timeout);
+end;
+
+procedure TLockedQueue.CallOnDataSync;
+begin
+  if Assigned(OnDataAvailable) then
+    TThread.Queue(nil, @CallOnDataAsync);
+end;
+
+procedure TLockedQueue.CallOnDataAsync;
+begin
+  if Assigned(OnDataAvailable) then
+    OnDataAvailable;
 end;
 
 end.
