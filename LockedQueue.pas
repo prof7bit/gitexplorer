@@ -23,6 +23,7 @@ type
       function Get(out Element: T; Timeout: Cardinal): Boolean;
       function Get(out Element: T): Boolean;
       procedure Put(Element: T);
+      procedure PutArray(FirstElement: PT; Count: Integer);
       procedure PutFront(Element: T);
       procedure Lock;
       procedure Unlock;
@@ -81,6 +82,21 @@ begin
   Lock;
   FData.PushBack(Element);
   if FData.Size() = 1 then begin
+    FEvent.SetEvent;
+    CallOnDataSync;
+  end;
+  Unlock;
+end;
+
+procedure TLockedQueue.PutArray(FirstElement: PT; Count: Integer);
+var
+  I: Integer;
+begin
+  Lock;
+  for I := 0 to Count - 1 do begin
+    FData.PushBack(FirstElement[I]);
+  end;
+  if FData.Size() = Count then begin
     FEvent.SetEvent;
     CallOnDataSync;
   end;
