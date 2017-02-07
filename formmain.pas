@@ -339,7 +339,7 @@ begin
   StartWaitExe(TreeView.Path, 'x-terminal-emulator', [], False, True);
   {$endif}
   {$ifdef windows}
-  StartExe(TreeView.Path, 'sh.exe', ['--login', '-i'], True, True);
+  StartWaitExe(TreeView.Path, 'sh.exe', ['--login', '-i'], True, True);
   {$endif}
 end;
 
@@ -398,9 +398,9 @@ begin
   Dirty := NodeIsDirty;
   Conflict := NodeIsConflict;
   Git := NodeIsGit;
-  MenuItemStash.Enabled := Git and (not Conflict) and Dirty;
+  MenuItemStash.Enabled := Git and Dirty;
   MenuItemPull.Enabled := Git and (not Conflict) and (not Dirty);
-  MenuItemStashPop.Enabled := Git and (not Conflict) and (not Dirty);
+  MenuItemStashPop.Enabled := Git;
   MenuItemGitk.Enabled := Git;
   MenuItemGitGui.Enabled := Git;
   MenuItemMeld.Enabled := Git;
