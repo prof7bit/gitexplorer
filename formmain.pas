@@ -29,6 +29,10 @@ type
 
   TFMain = class(TForm)
     ImageList: TImageList;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItemStashPop: TMenuItem;
+    MenuItemStash: TMenuItem;
     MenuItemGitGui: TMenuItem;
     MenuItemGitk: TMenuItem;
     MenuItemConsole: TMenuItem;
@@ -46,6 +50,8 @@ type
     procedure MenuItemMeldClick(Sender: TObject);
     procedure MenuItemPullClick(Sender: TObject);
     procedure MenuItemPushClick(Sender: TObject);
+    procedure MenuItemStashClick(Sender: TObject);
+    procedure MenuItemStashPopClick(Sender: TObject);
     procedure NodeMenuPopup(Sender: TObject);
     procedure TreeViewExpanded(Sender: TObject; Node: TTreeNode);
     procedure TreeViewGetImageIndex(Sender: TObject; Node: TTreeNode);
@@ -128,7 +134,7 @@ begin
   {$endif}
 end;
 
-procedure StartExe(Path: String; Cmd: String; Args: array of string; Wait: Boolean; Console: Boolean);
+procedure StartWaitExe(Path: String; Cmd: String; Args: array of string; Wait: Boolean; Console: Boolean);
 var
   P: TProcess;
 begin
@@ -330,7 +336,7 @@ end;
 procedure TFMain.MenuItemConsoleClick(Sender: TObject);
 begin
   {$ifdef linux}
-  StartExe(TreeView.Path, 'x-terminal-emulator', [], False, True);
+  StartWaitExe(TreeView.Path, 'x-terminal-emulator', [], False, True);
   {$endif}
   {$ifdef windows}
   StartExe(TreeView.Path, 'sh.exe', ['--login', '-i'], True, True);
@@ -339,48 +345,29 @@ end;
 
 procedure TFMain.MenuItemGitGuiClick(Sender: TObject);
 begin
-  StartExe(TreeView.Path, 'git', ['gui'], True, False);
+  StartWaitExe(TreeView.Path, 'git', ['gui'], True, False);
   QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemGitkClick(Sender: TObject);
 begin
   {$ifdef windows}
-  StartExe(TreeView.Path, 'sh', [GetExe('gitk')], True, False);
+  StartWaitExe(TreeView.Path, 'sh', [GetExe('gitk'), '-a'], True, False);
   {$else}
-  StartExe(TreeView.Path, 'gitk', [], True, False);
+  StartWaitExe(TreeView.Path, 'gitk', ['-a'], True, False);
   {$endif}
   QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemMeldClick(Sender: TObject);
 begin
-  StartExe(TreeView.Path, 'meld', [TreeView.Path], True, False);
+  StartWaitExe(TreeView.Path, 'meld', [TreeView.Path], True, False);
   QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
 procedure TFMain.MenuItemPullClick(Sender: TObject);
-var
-  OK: Boolean = False;
-  O: String = '';
-  N: TShellTreeNode;
 begin
-  N := TShellTreeNode(TreeView.Selected);
-  (*
-  if NodeIsDirty then begin
-    if RunGit(SelNode, ['stash'], O) then
-      if RunGit(SelNode, ['pull', '--rebase'], O) then
-        if RunGit(SelNode, ['stash', 'pop'], O) then
-          OK := True;
-  end
-  else begin
-    if RunGit(SelNode, ['pull', '--rebase'], O) then
-      OK := True;
-  end;
-  if not OK then
-    MessageDlg('Error', O, mtError, [mbOK], 0);
-  *)
-  FProgRun.Run(N, 'git', ['pull', '--rebase']);
+  FProgRun.Run(TShellTreeNode(TreeView.Selected), 'git', ['pull', '--rebase']);
 end;
 
 procedure TFMain.MenuItemPushClick(Sender: TObject);
@@ -392,14 +379,28 @@ begin
   QueueForImmediateUpdate(TShellTreeNode(TreeView.Selected));
 end;
 
+procedure TFMain.MenuItemStashClick(Sender: TObject);
+begin
+  FProgRun.Run(TShellTreeNode(TreeView.Selected), 'git', ['stash']);
+end;
+
+procedure TFMain.MenuItemStashPopClick(Sender: TObject);
+begin
+  FProgRun.Run(TShellTreeNode(TreeView.Selected), 'git', ['stash', 'pop']);
+end;
+
 procedure TFMain.NodeMenuPopup(Sender: TObject);
 var
   Conflict: Boolean;
+  Dirty: Boolean;
   Git: Boolean;
 begin
+  Dirty := NodeIsDirty;
   Conflict := NodeIsConflict;
   Git := NodeIsGit;
-  MenuItemPull.Enabled := Git and not Conflict;
+  MenuItemStash.Enabled := Git and (not Conflict) and Dirty;
+  MenuItemPull.Enabled := Git and (not Conflict) and (not Dirty);
+  MenuItemStashPop.Enabled := Git and (not Conflict) and (not Dirty);
   MenuItemGitk.Enabled := Git;
   MenuItemGitGui.Enabled := Git;
   MenuItemMeld.Enabled := Git;

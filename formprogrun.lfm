@@ -8,7 +8,7 @@ object FProgRun: TFProgRun
   ClientWidth = 476
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '1.6.3.0'
   inline SynEdit1: TSynEdit
     Left = 0
     Height = 344
@@ -23,7 +23,7 @@ object FProgRun: TFProgRun
     ParentFont = False
     TabOrder = 0
     Gutter.Visible = False
-    Gutter.Width = 55
+    Gutter.Width = 57
     Gutter.MouseActions = <>
     RightGutter.Width = 0
     RightGutter.MouseActions = <>
@@ -478,7 +478,7 @@ object FProgRun: TFProgRun
         MouseActions = <>
       end
       object SynGutterLineNumber1: TSynGutterLineNumber
-        Width = 15
+        Width = 17
         MouseActions = <>
         MarkupInfo.Background = clBtnFace
         MarkupInfo.Foreground = clNone

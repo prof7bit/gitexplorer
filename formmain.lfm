@@ -9,7 +9,7 @@ object FMain: TFMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '1.6.3.0'
   object TreeView: TShellTreeView
     Left = 0
     Height = 917
@@ -143,21 +143,35 @@ object FMain: TFMain
     OnPopup = NodeMenuPopup
     left = 32
     top = 96
+    object MenuItemStash: TMenuItem
+      Caption = 'git stash'
+      OnClick = MenuItemStashClick
+    end
     object MenuItemPull: TMenuItem
-      Caption = 'pull (git stash &&&& git pull --rebase &&&& git stash pop)'
+      Caption = 'git pull --rebase'
       OnClick = MenuItemPullClick
     end
+    object MenuItemStashPop: TMenuItem
+      Caption = 'git stash pop'
+      OnClick = MenuItemStashPopClick
+    end
+    object MenuItem1: TMenuItem
+      Caption = '-'
+    end
     object MenuItemMeld: TMenuItem
-      Caption = 'merge (meld)'
+      Caption = 'meld .'
       OnClick = MenuItemMeldClick
     end
     object MenuItemGitk: TMenuItem
-      Caption = 'log (gitk)'
+      Caption = 'gitk -a'
       OnClick = MenuItemGitkClick
     end
     object MenuItemGitGui: TMenuItem
-      Caption = 'commit or push (git gui)'
+      Caption = 'git commit (git gui)'
       OnClick = MenuItemGitGuiClick
+    end
+    object MenuItem2: TMenuItem
+      Caption = '-'
     end
     object MenuItemConsole: TMenuItem
       Caption = 'open terminal window'
