@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, Forms, Controls, Graphics, Dialogs,
-  SynEditKeyCmds, process, ShellCtrls, ExtCtrls, LockedQueue, Pipes;
+  SynEditKeyCmds, process, ShellCtrls, ExtCtrls, LockedQueue, Pipes, config;
 
 type
   TStringQueue = specialize TLockedQueue<String>;
@@ -23,7 +23,7 @@ type
   { TProcess2 }
 
   TProcess2 = class(TProcess)
-    constructor Create(AOwner: TComponent; Path, Cmd: String; Args: array of String);
+    constructor Create(AOwner: TComponent; Path, Cmd: String; Args: array of String); reintroduce;
     procedure EnvUpdate(key, Value: String);
   end;
 
@@ -31,6 +31,7 @@ type
 
   TFProgRun = class(TForm)
     SynEdit1: TSynEdit;
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure HookOnOutputAvailable;
@@ -146,6 +147,18 @@ begin
   FOutputQueue := TStringQueue.Create;
   FOutputQueue.OnDataAvailable := @HookOnOutputAvailable;
   FRunThread := TRunThread.Create(False);
+  Left := ConfigGetInt(cfConsoleWindowX);
+  Top := ConfigGetInt(cfConsoleWindowY);
+  Width := ConfigGetInt(cfConsoleWindowW);
+  Height := ConfigGetInt(cfConsoleWindowH);
+end;
+
+procedure TFProgRun.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  ConfigSetInt(cfConsoleWindowX, Left);
+  ConfigSetInt(cfConsoleWindowY, Top);
+  ConfigSetInt(cfConsoleWindowW, Width);
+  ConfigSetInt(cfConsoleWindowH, Height);
 end;
 
 procedure TFProgRun.FormDestroy(Sender: TObject);

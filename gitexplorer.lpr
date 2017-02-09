@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, FormMain, FormProgRun, LockedQueue
+  Forms, FormMain, FormProgRun, LockedQueue, config
   { you can add units after this };
 
 {$R *.res}

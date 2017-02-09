@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ShellCtrls,
-  ComCtrls, ExtCtrls, Menus, process, LazUTF8, FormProgRun,
+  ComCtrls, ExtCtrls, Menus, process, LazUTF8, FormProgRun, config,
   LockedQueue;
 
 const
@@ -41,6 +41,7 @@ type
     NodeMenu: TPopupMenu;
     TreeView: TShellTreeView;
     UpdateTimer: TTimer;
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -412,6 +413,18 @@ begin
   FUpdaterInbox := TUpdaterQueue.Create;
   TreeView.Root := GetUserDir;
   FUpdateThread := TUpdateThread.Create(False);
+  Left := ConfigGetInt(cfWindowX);
+  Top := ConfigGetInt(cfWindowY);
+  Width := ConfigGetInt(cfWindowW);
+  Height := ConfigGetInt(cfWindowH);
+end;
+
+procedure TFMain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  ConfigSetInt(cfWindowX, Left);
+  ConfigSetInt(cfWindowY, Top);
+  ConfigSetInt(cfWindowW, Width);
+  ConfigSetInt(cfWindowH, Height);
 end;
 
 procedure TFMain.FormDestroy(Sender: TObject);
