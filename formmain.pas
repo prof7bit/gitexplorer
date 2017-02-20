@@ -71,6 +71,8 @@ type
     function NodeIsConflict: Boolean;
     function NodeIsGit: Boolean;
     function SelNode: TShellTreeNode;
+    procedure EnableTimer;
+    procedure DisableTimer;
   end;
 
 var
@@ -191,7 +193,7 @@ begin
   repeat
     if FMain.FUpdaterInbox.Get(Node, 100) then begin
       Print('update queue processing, halting update timer');
-      FMain.UpdateTimer.Enabled := True;
+      Synchronize(@FMain.DisableTimer);
 
       repeat
         Print('updating: ' + Node.ShortFilename);
@@ -201,9 +203,8 @@ begin
       until not FMain.FUpdaterInbox.Get(Node, 100);
 
       Print('queue empty, resuming update timer');
-      FMain.UpdateTimer.Enabled := True;
+      Synchronize(@FMain.EnableTimer);
     end;
-    Sleep(1);
   until AppTerminating;
 end;
 
@@ -327,6 +328,16 @@ end;
 function TFMain.SelNode: TShellTreeNode;
 begin
   Result := TShellTreeNode(TreeView.Selected);
+end;
+
+procedure TFMain.EnableTimer;
+begin
+  UpdateTimer.Enabled := True;
+end;
+
+procedure TFMain.DisableTimer;
+begin
+  UpdateTimer.Enabled := False;
 end;
 
 procedure TFMain.FormShow(Sender: TObject);
